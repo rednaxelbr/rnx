@@ -1,9 +1,15 @@
+// Package rnx Copyright(C) 2017 Rednaxel Informática Ltda
 package rnx
 
 import (
 	"database/sql/driver"
+	"encoding/xml"
 	"fmt"
 	"strconv"
+)
+
+const (
+	currPrecision = 10000.0 // 4 decimals
 )
 
 // Currency similar ao Delphi
@@ -13,12 +19,12 @@ type Currency struct {
 
 // Value (padrão)
 func (c Currency) Value() float64 {
-	return float64(c.value) / 10000.0
+	return float64(c.value) / currPrecision
 }
 
 // SetValue (padrão)
 func (c *Currency) SetValue(v float64) {
-	c.value = Round(v * 10000.0)
+	c.value = Round(v * currPrecision)
 }
 
 // String (padrão)
@@ -28,15 +34,35 @@ func (c Currency) String() string {
 
 // MarshalJSON (padrão)
 func (c *Currency) MarshalJSON() ([]byte, error) {
-	var str string
-
-	str = c.String()
+	str := c.String()
 	return []byte(str), nil
 }
 
 // UnmarshalJSON (padrão)
 func (c *Currency) UnmarshalJSON(curBytes []byte) error {
 	s, err := strconv.ParseFloat(string(curBytes), 64)
+	if err != nil {
+		return err
+	}
+	c.SetValue(s)
+	return nil
+}
+
+// MarshalXML (padrão)
+func (c *Currency) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
+	type str struct{ val string }
+	v := &str{c.String()}
+	e.Encode(v)
+	return nil
+}
+
+// UnmarshalXML (padrão)
+func (c *Currency) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
+	var str string
+	if err := d.DecodeElement(&str, &start); err != nil {
+		return err
+	}
+	s, err := strconv.ParseFloat(str, 64)
 	if err != nil {
 		return err
 	}
@@ -59,7 +85,7 @@ func (nc *NullCurrency) Scan(value interface{}) error {
 }
 
 // Value implements the driver Valuer interface.
-func (nc NullCurrency) Value() (driver.Value, error) {
+func (nc *NullCurrency) Value() (driver.Value, error) {
 	if !nc.Valid {
 		return nil, nil
 	}
@@ -67,8 +93,21 @@ func (nc NullCurrency) Value() (driver.Value, error) {
 }
 
 // SetValue updates
-func (nc NullCurrency) SetValue(v float64) {
+func (nc *NullCurrency) SetValue(v float64) {
 	nc.Curr.SetValue(v)
 	nc.Valid = true
 	return
+}
+
+// String (padrão)
+func (nc *NullCurrency) String() string {
+	return nc.Curr.String()
+}
+
+// MarshalXML (padrão)
+func (nc *NullCurrency) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
+	type str struct{ val string }
+	v := &str{nc.String()}
+	e.Encode(v)
+	return nil
 }
