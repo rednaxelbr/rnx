@@ -50,10 +50,9 @@ func (c *Currency) UnmarshalJSON(curBytes []byte) error {
 }
 
 // MarshalXML (padrão)
-func (c *Currency) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
-	type str struct{ val string }
-	v := &str{c.String()}
-	e.Encode(v)
+func (c Currency) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
+	v := c.String()
+	e.EncodeElement(&v, start)
 	return nil
 }
 

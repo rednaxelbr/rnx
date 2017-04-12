@@ -1,4 +1,3 @@
-// Package rnx - Biblioteca Rednaxel
 package rnx
 
 // Round porque o Golang não tem...
