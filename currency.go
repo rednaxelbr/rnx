@@ -5,6 +5,7 @@ import (
 	"database/sql/driver"
 	"encoding/xml"
 	"fmt"
+	"reflect"
 	"strconv"
 )
 
@@ -27,13 +28,13 @@ func (c *Currency) SetValue(v float64) {
 	c.value = Round(v * currPrecision)
 }
 
-// String (padrão)
+// String (nunca usar asterisco)
 func (c Currency) String() string {
 	return fmt.Sprintf("%.4f", c.Value())
 }
 
-// MarshalJSON (padrão)
-func (c *Currency) MarshalJSON() ([]byte, error) {
+// MarshalJSON (nunca usar asterisco)
+func (c Currency) MarshalJSON() ([]byte, error) {
 	str := c.String()
 	return []byte(str), nil
 }
@@ -78,9 +79,30 @@ type NullCurrency struct {
 	Valid bool // Valid is true if Curr is not NULL
 }
 
+func (nc *NullCurrency) getBytes(src interface{}) []byte {
+	if a, ok := src.([]uint8); ok {
+		return a
+	}
+	return nil
+}
+
 // Scan implements the Scanner interface.
 func (nc *NullCurrency) Scan(value interface{}) error {
-	nc.Curr, nc.Valid = value.(Currency)
+	switch value.(type) {
+	case float32, float64:
+		nc.Curr.SetValue(value.(float64))
+		nc.Valid = true
+	case []uint8:
+		str := string(nc.getBytes(value))
+		v, err := strconv.ParseFloat(str, 64)
+		if err != nil {
+			return err
+		}
+		nc.Curr.SetValue(v)
+		nc.Valid = true
+	default:
+		return fmt.Errorf("Tipo inválido: %s", reflect.TypeOf(value))
+	}
 	return nil
 }
 
@@ -99,9 +121,12 @@ func (nc *NullCurrency) SetValue(v float64) {
 	return
 }
 
-// String (padrão)
-func (nc *NullCurrency) String() string {
-	return nc.Curr.String()
+// String (nunca usar asterisco)
+func (nc NullCurrency) String() string {
+	if nc.Valid {
+		return nc.Curr.String()
+	}
+	return "<null>"
 }
 
 // MarshalXML (padrão)
@@ -111,3 +136,11 @@ func (nc *NullCurrency) MarshalXML(e *xml.Encoder, start xml.StartElement) error
 	e.Encode(v)
 	return nil
 }
+
+/*
+// MarshalJSON (padrão)
+func (nc *NullCurrency) MarshalJSON() ([]byte, error) {
+	str := "3.1416" //nc.String()
+	return []byte(str), nil
+}
+*/
