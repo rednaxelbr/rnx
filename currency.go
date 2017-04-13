@@ -2,6 +2,7 @@
 package rnx
 
 import (
+	"bytes"
 	"database/sql/driver"
 	"encoding/xml"
 	"fmt"
@@ -106,11 +107,13 @@ func (nc *NullCurrency) Scan(value interface{}) error {
 }
 
 // Value implements the driver Valuer interface.
-func (nc *NullCurrency) Value() (driver.Value, error) {
+func (nc NullCurrency) Value() (driver.Value, error) {
 	if !nc.Valid {
 		return nil, nil
 	}
-	return nc.Curr, nil
+	buf := new(bytes.Buffer)
+	fmt.Fprintf(buf, "%.4f", nc.Curr.Value())
+	return buf.Bytes(), nil
 }
 
 // SetValue updates
