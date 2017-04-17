@@ -14,6 +14,8 @@ const (
 	currPrecision = 10000.0 // 4 decimals
 )
 
+//=============================================================================
+
 // Currency similar ao Delphi
 type Currency struct {
 	value int64
@@ -71,6 +73,8 @@ func (c *Currency) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 	return nil
 }
 
+//=============================================================================
+
 // NullCurrency represents a Currency that may be null.
 // NullCurrency implements the Scanner interface so
 // it can be used as a scan destination, similar to NullString.
@@ -100,6 +104,8 @@ func (nc *NullCurrency) Scan(value interface{}) error {
 		}
 		nc.Curr.SetValue(v)
 		nc.Valid = true
+	case nil:
+		return nil
 	default:
 		return fmt.Errorf("Tipo inválido: %s", reflect.TypeOf(value))
 	}
@@ -128,7 +134,7 @@ func (nc NullCurrency) String() string {
 	if nc.Valid {
 		return nc.Curr.String()
 	}
-	return "<null>"
+	return ""
 }
 
 // MarshalXML (padrão)
@@ -146,3 +152,11 @@ func (nc *NullCurrency) MarshalJSON() ([]byte, error) {
 	return []byte(str), nil
 }
 */
+
+//=============================================================================
+
+// NewCurrency creates a new Currency
+func NewCurrency(v float64) Currency {
+	return Currency{
+		value: Round(v * currPrecision)}
+}
