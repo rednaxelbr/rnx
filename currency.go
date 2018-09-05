@@ -132,26 +132,42 @@ func (nc *NullCurrency) SetValue(v float64) {
 // String (nunca usar asterisco)
 func (nc NullCurrency) String() string {
 	if nc.Valid {
-		return nc.Curr.String()
+		return fmt.Sprintf("%.4f", nc.Curr.Value())
 	}
 	return ""
 }
 
 // MarshalXML (padrão)
-func (nc *NullCurrency) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
+func (nc NullCurrency) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 	type str struct{ val string }
 	v := &str{nc.String()}
 	e.Encode(v)
 	return nil
 }
 
-/*
 // MarshalJSON (padrão)
-func (nc *NullCurrency) MarshalJSON() ([]byte, error) {
-	str := "3.1416" //nc.String()
-	return []byte(str), nil
+func (nc NullCurrency) MarshalJSON() ([]byte, error) {
+	if nc.Valid {
+		str := nc.String()
+		return []byte(str), nil
+	}
+	return []byte("null"), nil
 }
-*/
+
+// UnmarshalJSON (padrão)
+func (nc *NullCurrency) UnmarshalJSON(curBytes []byte) error {
+	if string(curBytes) != "null" {
+		s, err := strconv.ParseFloat(string(curBytes), 64)
+		if err != nil {
+			return err
+		}
+		nc.SetValue(s)
+	} else {
+		nc.SetValue(0)
+		nc.Valid = false
+	}
+	return nil
+}
 
 //=============================================================================
 
