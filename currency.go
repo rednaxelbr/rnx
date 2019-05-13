@@ -156,6 +156,12 @@ func (nc NullCurrency) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON (padrão)
 func (nc *NullCurrency) UnmarshalJSON(curBytes []byte) error {
+	if curBytes == nil {
+		nc.SetValue(0)
+		nc.Valid = false
+		return nil
+	}
+	//log.Printf("NullCurrency.UnmarshalJSON(%v)", curBytes)
 	if string(curBytes) != "null" {
 		s, err := strconv.ParseFloat(string(curBytes), 64)
 		if err != nil {
