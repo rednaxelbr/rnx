@@ -3,28 +3,24 @@ package rnx
 import (
 	"encoding/json"
 	"encoding/xml"
+	"math"
 	"testing"
 )
 
-var testesRound = []struct {
-	n        float64 // input
-	expected int64   // expected result
+var testesCNPJ = []struct {
+	n        int64 // input
+	expected bool  // expected result
 }{
-	{1.02, 1},
-	{2.45, 2},
-	{3.51, 4},
-	{3.49, 3},
-	{4.50, 5},
-	{5.00, 5},
-	{-4.3, -4},
+	{79768048000102, true},
+	{79768048000103, false},
 }
 
-func TestRound(t *testing.T) {
-	t.Log("Round()")
-	for _, tt := range testesRound {
-		actual := Round(tt.n)
+func TestCNPJ(t *testing.T) {
+	t.Log("ValidateCNPJ()")
+	for _, tt := range testesCNPJ {
+		actual := ValidateCNPJ(tt.n)
 		if actual != tt.expected {
-			t.Errorf("Round(%.4f): expected %d, actual %d", tt.n, tt.expected, actual)
+			t.Errorf("ValidateCNPJ(%d): expected %v, actual %v", tt.n, tt.expected, actual)
 		}
 	}
 }
@@ -39,8 +35,7 @@ func TestCurrency(t *testing.T) {
 		Campo   Currency `xml:"campo"`
 	}
 
-	var pi float64
-	pi = 355.0 / 113.0 //aproximação de Pi
+	pi := math.Pi
 	t.Log("Pi():", pi)
 	expected := "3.1416"
 	valor.SetValue(pi)

@@ -6,6 +6,7 @@ import (
 	"database/sql/driver"
 	"encoding/xml"
 	"fmt"
+	"math"
 	"reflect"
 	"strconv"
 )
@@ -28,7 +29,7 @@ func (c Currency) Value() float64 {
 
 // SetValue (padrão)
 func (c *Currency) SetValue(v float64) {
-	c.value = Round(v * currPrecision)
+	c.value = int64(math.Round(v * currPrecision))
 }
 
 // String (nunca usar asterisco)
@@ -107,7 +108,7 @@ func (nc *NullCurrency) Scan(value interface{}) error {
 	case nil:
 		return nil
 	default:
-		return fmt.Errorf("Tipo inválido: %s", reflect.TypeOf(value))
+		return fmt.Errorf("tipo inválido: %s", reflect.TypeOf(value))
 	}
 	return nil
 }
@@ -126,7 +127,6 @@ func (nc NullCurrency) Value() (driver.Value, error) {
 func (nc *NullCurrency) SetValue(v float64) {
 	nc.Curr.SetValue(v)
 	nc.Valid = true
-	return
 }
 
 // String (nunca usar asterisco)
@@ -139,7 +139,9 @@ func (nc NullCurrency) String() string {
 
 // MarshalXML (padrão)
 func (nc NullCurrency) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
-	type str struct{ val string }
+	type str struct {
+		Val string `xml:"val"`
+	}
 	v := &str{nc.String()}
 	e.Encode(v)
 	return nil
@@ -180,5 +182,5 @@ func (nc *NullCurrency) UnmarshalJSON(curBytes []byte) error {
 // NewCurrency creates a new Currency
 func NewCurrency(v float64) Currency {
 	return Currency{
-		value: Round(v * currPrecision)}
+		value: int64(math.Round(v * currPrecision))}
 }
